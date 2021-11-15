@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "^0.11.6", features = ["json", "blocking", "default-tls"], default-features = false }
+reqwest = { version = "^0.11.6", features = ["json", "blocking", "rustls-tls"], default-features = false }
 serde = { version = "^1.0.130", features = ["derive"], default-features = false }
 serde_json = "^1.0.69"
 indicatif = { git = "https://github.com/mitsuhiko/indicatif.git", branch = "main" }
