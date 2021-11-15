@@ -31,6 +31,8 @@ impl Image {
     }
 
     pub fn layers(&self) -> Result<Vec<super::Layer>> {
+        const DEFAULT: &'static str = "application/vnd.docker.image.rootfs.diff.tar.gzip";
+
         Ok(match &self.manifest {
             Manifest::DockerV1(m) => m
                 .layers
@@ -39,7 +41,7 @@ impl Image {
                     super::Layer::new(
                         self.repo.clone(),
                         Layer {
-                            media_type: Some("application/vnd.docker.image.rootfs.diff.tar.gzip".into()),
+                            media_type: Some(DEFAULT.into()),
                             size: 0,
                             digest: l.digest.clone(),
                             urls: Vec::new(),
