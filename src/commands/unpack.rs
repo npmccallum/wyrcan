@@ -89,8 +89,8 @@ impl Command for Unpack {
                     #[cfg(not(target_os = "macos"))]
                     S_IFCHR | S_IFBLK => {
                         let into = into.as_os_str().as_bytes().as_ptr();
-                        let major = hdr.device_major()?.unwrap_or_default();
-                        let minor = hdr.device_minor()?.unwrap_or_default();
+                        let major = head.device_major()?.unwrap_or_default();
+                        let minor = head.device_minor()?.unwrap_or_default();
                         let dev = unsafe { libc::makedev(major, minor) };
                         let ret = unsafe { libc::mknod(into as _, mode, dev) };
                         if ret < 0 {

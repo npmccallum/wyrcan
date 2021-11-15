@@ -35,7 +35,7 @@ impl<O: Write> LookAside<O> {
     }
 
     fn glance(&mut self, header: &Header) -> Result<Option<&mut dyn Write>> {
-        let mode: u16 = header.mode()?.try_into()?;
+        let mode: libc::mode_t = header.mode()?.try_into()?;
         let path = header.path()?;
 
         if path.as_ref() == &self.symlink {
@@ -84,7 +84,7 @@ impl<K: Write, I: Write, C: Write> Command for Extract<K, I, C> {
                 let mut entry = entry?;
                 let head = entry.header().clone();
                 let path = entry.path()?;
-                let mode: u16 = head.mode()?.try_into()?;
+                let mode: libc::mode_t = head.mode()?.try_into()?;
                 let size = head.size()?.try_into()?;
 
                 // Create an entry in the cpio.
