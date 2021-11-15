@@ -1,7 +1,7 @@
 use super::Repository;
 use crate::formats::{docker::v2::Layer, Manifest};
 
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 use anyhow::Result;
 
@@ -21,10 +21,10 @@ impl Display for Image {
 impl Image {
     pub(super) fn new(repo: Repository, tag: &str) -> Result<Self> {
         let path = format!("manifests/{}", tag);
-        let rep = repo.get(&path, HashMap::new())?;
+        let rep = repo.get(&path, &[])?;
 
         Ok(Image {
-            manifest: rep.json()?,
+            manifest: rep.into_json()?,
             repo,
             tag: tag.into(),
         })

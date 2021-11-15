@@ -6,13 +6,11 @@ use std::fmt::Display;
 
 use anyhow::{anyhow, Result};
 use regex::Regex;
-use reqwest::blocking::{Client, Response};
-use reqwest::StatusCode;
 use serde::Deserialize;
+use ureq::Response;
 
 #[derive(Clone, Debug)]
 pub struct Repository {
-    client: Client,
     host: String,
     path: String,
 }
@@ -55,36 +53,30 @@ impl Repository {
         let args = join.join("&");
         let url = format!("{}?{}", base, args);
 
-        let auth: Auth = self.client.get(url).send()?.json()?;
+        let auth: Auth = ureq::get(&url).call()?.into_json()?;
         let token = format!("Bearer {}", auth.token);
         Ok(token)
     }
 
-    pub(super) fn get(&self, path: &str, mut headers: HashMap<String, String>) -> Result<Response> {
+    pub(super) fn get(&self, path: &str, headers: &[(&str, &str)]) -> Result<Response> {
         let url = format!("https://{}/v2/{}/{}", self.host, self.path, path);
 
-        let mut req = self.client.get(url);
-        for (k, v) in &headers {
-            req = req.header(k, v);
+        let mut auth = false;
+        let mut req = ureq::get(&url);
+        for (k, v) in headers {
+            req = req.set(k, v);
+            auth |= *k == "Authorization";
         }
 
-        let rep = req.send()?;
-
-        let code = match rep.status() {
-            StatusCode::OK => return Ok(rep),
-            StatusCode::UNAUTHORIZED if !headers.contains_key("Authorization") => {
-                if let Some(hdr) = rep.headers().get("Www-Authenticate") {
-                    let token = self.auth(hdr.to_str()?)?;
-                    headers.insert("Authorization".into(), token);
-                    return self.get(path, headers);
-                }
-
-                StatusCode::UNAUTHORIZED
+        match req.call() {
+            Err(ureq::Error::Status(401, rep)) if !auth && rep.has("Www-Authenticate") => {
+                let token = self.auth(rep.header("Www-Authenticate").unwrap())?;
+                self.get(path, &[("Authorization", &token)])
             }
-            n => n,
-        };
 
-        Err(anyhow!("received status: {}", code))
+            Ok(rep) => Ok(rep),
+            Err(e) => Err(e.into()),
+        }
     }
 
     const DEFAULT_REGISTRY: &'static str = "docker.io";
@@ -131,7 +123,6 @@ impl Repository {
         }
 
         let out = Self {
-            client: Client::builder().build()?,
             host: host.into(),
             path,
         };
@@ -147,8 +138,8 @@ impl Repository {
             tags: Vec<String>,
         }
 
-        let rep = self.get("tags/list", HashMap::new())?;
-        let tags: Tags = rep.json()?;
+        let rep = self.get("tags/list", &[])?;
+        let tags: Tags = rep.into_json()?;
         Ok(tags.tags)
     }
 

@@ -1,13 +1,11 @@
 use super::Repository;
 use crate::formats::docker::v2::Layer as Level;
-use crate::formats::Digest;
 use crate::iotools::{Either, Validator};
 
-use std::{collections::HashMap, io::Read};
+use std::io::Read;
 
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
-use reqwest::blocking::Response;
 
 #[derive(Clone, Debug)]
 pub struct Layer {
@@ -18,10 +16,6 @@ pub struct Layer {
 impl Layer {
     pub(super) fn new(repo: Repository, level: Level) -> Self {
         Self { repo, level }
-    }
-
-    pub fn size(&self) -> u64 {
-        self.level.size
     }
 
     pub fn decompressor<R: Read>(&self, reader: R) -> Result<Either<GzDecoder<R>, R>> {
@@ -52,14 +46,16 @@ impl Layer {
         Ok(x)
     }
 
-    pub fn download(&self) -> Result<Validator<Response, Digest>> {
+    pub fn download(&self) -> Result<(u64, impl Read + Send)> {
         let path = format!("blobs/{}", self.level.digest);
 
-        let rep = self.repo.get(&path, HashMap::new())?;
-        if self.level.size != 0 && rep.content_length() != Some(self.level.size) {
-            return Err(anyhow!("unexpected size: {:?}", rep.content_length()));
-        }
+        let rep = self.repo.get(&path, &[])?;
+        let len = rep
+            .header("Content-Length")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(self.level.size);
 
-        Ok(Validator::new(rep, self.level.digest.clone()))
+        let validator = Validator::new(rep.into_reader(), self.level.digest.clone());
+        Ok((len, validator))
     }
 }

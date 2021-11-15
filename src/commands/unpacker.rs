@@ -86,9 +86,9 @@ impl Unpacker {
 
         // Set up the reader chain for each bundle
         for (thread, layer) in threads.into_iter().zip(self.layers.iter().rev()) {
-            let src = thread.join().unwrap()?;
+            let (size, src) = thread.join().unwrap()?;
+            progress.inc_length(size);
 
-            progress.inc_length(src.reader().content_length().unwrap_or(layer.size()));
             let src = progress.wrap_read(src);
             let src = threaded::Reader::new(src);
             let src = layer.decompressor(BufReader::new(src))?;
