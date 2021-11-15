@@ -1,0 +1,29 @@
+[package]
+name = "wyrcan"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "^0.11.6", features = ["json", "blocking", "default-tls"], default-features = false }
+serde = { version = "^1.0.130", features = ["derive"], default-features = false }
+serde_json = "^1.0.69"
+indicatif = { git = "https://github.com/mitsuhiko/indicatif.git", branch = "main" }
+structopt = "^0.3.25"
+anyhow = "^1.0.45"
+flate2 = "^1.0.22"
+digest = "^0.9.0"
+libc = "^0.2.107"
+regex = "^1.5.4"
+sha2 = "^0.9.8"
+cpio = "^0.2.0"
+tar = "^0.4.37"
+log = "^0.4.14"
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+incremental = false
+opt-level = 3
+lto = true
