@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use std::io::{BufRead, Read, Write};
 
 /// Read from or write into either of two types

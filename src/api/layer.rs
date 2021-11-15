@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use super::Repository;
 use crate::formats::docker::v2::Layer as Level;
 use crate::iotools::{Either, Validator};

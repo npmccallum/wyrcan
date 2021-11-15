@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use std::ffi::CString;
 use std::fs::File;
 use std::os::unix::prelude::*;

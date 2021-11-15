@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use std::io::{Result, Write};
 
 /// A writer which writes all input into two writers

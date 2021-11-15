@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use std::cmp::min;
 use std::io::{ErrorKind, Read, Result};
 use std::sync::mpsc::{channel, Receiver};

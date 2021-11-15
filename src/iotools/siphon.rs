@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2021 Profian, Inc.
+
 use std::io::{Read, Result, Write};
 
 /// A reader which writes to a writer on every read
