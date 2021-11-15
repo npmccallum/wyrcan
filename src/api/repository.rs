@@ -4,7 +4,7 @@ use std::cmp::max;
 use std::collections::HashMap;
 use std::fmt::Display;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use regex::Regex;
 use serde::Deserialize;
 use ureq::Response;

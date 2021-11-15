@@ -2,9 +2,8 @@ use std::io::Write;
 use std::str::FromStr;
 
 use anyhow::Result;
-use digest::{generic_array::GenericArray, Digest as D};
 use serde::Deserialize;
-use sha2::{Sha224, Sha256, Sha384, Sha512};
+use ring::digest::*;
 
 use crate::iotools::Validatable;
 
@@ -18,18 +17,16 @@ fn dehex(byte: u8) -> Result<u8, Invalid> {
     })
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 enum Inner {
-    Sha224(Sha224, GenericArray<u8, <Sha224 as D>::OutputSize>),
-    Sha256(Sha256, GenericArray<u8, <Sha256 as D>::OutputSize>),
-    Sha384(Sha384, GenericArray<u8, <Sha384 as D>::OutputSize>),
-    Sha512(Sha512, GenericArray<u8, <Sha512 as D>::OutputSize>),
+    Sha256(Context, [u8; SHA256_OUTPUT_LEN]),
+    Sha384(Context, [u8; SHA384_OUTPUT_LEN]),
+    Sha512(Context, [u8; SHA512_OUTPUT_LEN]),
 }
 
 impl AsRef<[u8]> for Inner {
     fn as_ref(&self) -> &[u8] {
         match self {
-            Inner::Sha224(.., a) => a.as_ref(),
             Inner::Sha256(.., a) => a.as_ref(),
             Inner::Sha384(.., a) => a.as_ref(),
             Inner::Sha512(.., a) => a.as_ref(),
@@ -40,7 +37,6 @@ impl AsRef<[u8]> for Inner {
 impl AsMut<[u8]> for Inner {
     fn as_mut(&mut self) -> &mut [u8] {
         match self {
-            Inner::Sha224(.., a) => a.as_mut(),
             Inner::Sha256(.., a) => a.as_mut(),
             Inner::Sha384(.., a) => a.as_mut(),
             Inner::Sha512(.., a) => a.as_mut(),
@@ -71,21 +67,19 @@ impl FromStr for Inner {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (mut i, h) = if let Some((lhs, rhs)) = s.find(':').map(|x| s.split_at(x)) {
-            let inner = if lhs.eq_ignore_ascii_case("sha224") {
-                Inner::Sha224(Sha224::new(), Default::default())
-            } else if lhs.eq_ignore_ascii_case("sha256") {
-                Inner::Sha256(Sha256::new(), Default::default())
+            let inner = if lhs.eq_ignore_ascii_case("sha256") {
+                Inner::Sha256(Context::new(&SHA256), [0; SHA256_OUTPUT_LEN])
             } else if lhs.eq_ignore_ascii_case("sha384") {
-                Inner::Sha384(Sha384::new(), Default::default())
+                Inner::Sha384(Context::new(&SHA384), [0; SHA384_OUTPUT_LEN])
             } else if lhs.eq_ignore_ascii_case("sha512") {
-                Inner::Sha512(Sha512::new(), Default::default())
+                Inner::Sha512(Context::new(&SHA512), [0; SHA512_OUTPUT_LEN])
             } else {
                 return Err(Invalid::Algorithm);
             };
 
             (inner, &rhs[1..])
         } else if s.len() == 64 {
-            (Inner::Sha256(Sha256::new(), Default::default()), s)
+            (Inner::Sha256(Context::new(&SHA256), Default::default()), s)
         } else {
             return Err(Invalid::Algorithm);
         };
@@ -130,8 +124,14 @@ impl<'de> serde::de::Visitor<'de> for Visitor {
 /// A digest instance implements `std::io::Write` so you can write directly
 /// into it. You can also `validate()` the data written to it to confirm
 /// integrity.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Digest(Inner);
+
+impl std::fmt::Debug for Digest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
 
 impl<'de> Deserialize<'de> for Digest {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
@@ -150,7 +150,6 @@ impl FromStr for Digest {
 impl Digest {
     pub fn algorithm(&self) -> &str {
         match self.0 {
-            Inner::Sha224(..) => "sha224",
             Inner::Sha256(..) => "sha256",
             Inner::Sha384(..) => "sha384",
             Inner::Sha512(..) => "sha512",
@@ -161,20 +160,16 @@ impl Digest {
 impl Write for Digest {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match &mut self.0 {
-            Inner::Sha224(w, ..) => w.write(buf),
-            Inner::Sha256(w, ..) => w.write(buf),
-            Inner::Sha384(w, ..) => w.write(buf),
-            Inner::Sha512(w, ..) => w.write(buf),
-        }
+            Inner::Sha256(w, ..) => w.update(buf),
+            Inner::Sha384(w, ..) => w.update(buf),
+            Inner::Sha512(w, ..) => w.update(buf),
+        };
+
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        match &mut self.0 {
-            Inner::Sha224(w, ..) => w.flush(),
-            Inner::Sha256(w, ..) => w.flush(),
-            Inner::Sha384(w, ..) => w.flush(),
-            Inner::Sha512(w, ..) => w.flush(),
-        }
+        Ok(())
     }
 }
 
@@ -193,10 +188,9 @@ impl std::fmt::Display for Digest {
 impl Validatable for Digest {
     fn validate(&self) -> bool {
         match &self.0 {
-            Inner::Sha224(w, h) => &w.clone().finalize() == h,
-            Inner::Sha256(w, h) => &w.clone().finalize() == h,
-            Inner::Sha384(w, h) => &w.clone().finalize() == h,
-            Inner::Sha512(w, h) => &w.clone().finalize() == h,
+            Inner::Sha256(w, h) => &w.clone().finish().as_ref() == h,
+            Inner::Sha384(w, h) => &w.clone().finish().as_ref() == h,
+            Inner::Sha512(w, h) => &w.clone().finish().as_ref() == h,
         }
     }
 }
