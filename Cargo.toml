@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "^1.0.130", features = ["derive"], default-features = false }
+structopt = { version = "^0.3.25", default-features = false }
 ureq = { version = "*", features = ["json"] }
 indicatif = "^0.16.2"
-structopt = "^0.3.25"
 anyhow = "^1.0.45"
 flate2 = "^1.0.22"
 ring = "^0.16.20"
