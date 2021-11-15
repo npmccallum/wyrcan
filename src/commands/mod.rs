@@ -2,6 +2,7 @@ use structopt::StructOpt;
 
 mod convert;
 mod extract;
+mod kexec;
 mod tags;
 mod unpack;
 mod unpacker;
@@ -14,6 +15,7 @@ pub trait Command {
 #[structopt(about = "the container bootloader")]
 pub enum Main {
     Tags(tags::Tags),
+    Kexec(kexec::Kexec),
     Unpack(unpack::Unpack),
     Convert(convert::Convert),
 }
@@ -22,6 +24,7 @@ impl Command for Main {
     fn execute(self) -> anyhow::Result<()> {
         match self {
             Self::Tags(cmd) => cmd.execute(),
+            Self::Kexec(cmd) => cmd.execute(),
             Self::Unpack(cmd) => cmd.execute(),
             Self::Convert(cmd) => cmd.execute(),
         }

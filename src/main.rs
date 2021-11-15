@@ -1,3 +1,5 @@
+#![feature(asm)]
+
 mod api;
 mod commands;
 mod formats;
