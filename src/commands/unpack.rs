@@ -3,7 +3,7 @@ use super::Command;
 use crate::api::Repository;
 
 use std::fs::{DirBuilder, OpenOptions};
-use std::io::{Error};
+use std::io::Error;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Component, PathBuf};

@@ -1,15 +1,15 @@
 use super::unpacker::Unpacker;
+use super::Command;
 use crate::api::Repository;
 use crate::iotools::Muxer;
-use super::Command;
 
-use std::{path::PathBuf};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use libc::{S_IFLNK, S_IFMT, S_IFREG};
-use tar::{Header};
+use tar::Header;
 
 #[derive(Debug)]
 pub struct LookAside<O: Write> {
@@ -51,7 +51,7 @@ impl<O: Write> LookAside<O> {
                     }
                 }
 
-                _ => ()
+                _ => (),
             }
 
             Err(anyhow!("unsupported entry: {:?}", header))
@@ -120,7 +120,7 @@ impl<K: Write, I: Write, C: Write> Command for Extract<K, I, C> {
                     None => match cmdline.glance(&head)? {
                         Some(w) => Muxer::new(writer, w),
                         None => Muxer::new(writer, &mut sink),
-                    }
+                    },
                 };
 
                 // Copy from the tarball to the cpio.

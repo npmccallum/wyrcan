@@ -3,10 +3,7 @@ use serde::Deserialize;
 use crate::formats::Digest;
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct History {
-    //#[serde(default, rename = "v1Compatibility")]
-    //pub v1_compatibility: Vec<String>,
-}
+pub struct History {}
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Layer {
